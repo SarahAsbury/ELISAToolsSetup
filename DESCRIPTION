@@ -1,0 +1,12 @@
+Package: ELISAToolsSetup
+Type: Package
+Title: Functions to re-format LEGENDplex output files for ELISATools
+Version: 0.1.0
+Author: Sarah Asbury
+Maintainer: The package maintainer <asburysrh@gmail.com>
+Description: Generates OD file format for ELISATools input from LEGENDplex MFI output and 96-well plate annotations 
+License: MIT
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.0
+Imports: tidyverse
