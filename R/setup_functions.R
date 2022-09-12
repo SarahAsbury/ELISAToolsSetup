@@ -140,7 +140,7 @@ loop.mfi.sub <- function(mfi, #with id_replicate column (run #1: create.id_repli
     colnames(analyte.plate.df) <- colnames(plate)
 
     #re-format plate in long-form  (col 1 = well, col 2 = mfi)
-    analyte.plate.longer <- analyte.plate.df %>% cbind(well_row[1:nrow(analyte.plate.df)]) %>%
+    analyte.plate.longer <- analyte.plate.df %>% cbind(well_row[1:nrow(analyte.plate.df)]) %>% pipe_data_status() %>%
       pivot_longer(cols = colnames(analyte.plate.df), names_to = "well_col", values_to = "mfi") %>%
       mutate(well_col = gsub("V", "", well_col)) %>% mutate(well = paste0(well_row, well_col)) %>%
       select(well, mfi)
@@ -164,7 +164,7 @@ format.analyte.plates <- function(analytes.list,
   # === constant rows between plates ===
   row.1 <- c("##BLOCKS= 1", rep("", 13)) %>% data.frame.OD.rows
   row.3 <- c("", "Temperature(iC", 1:12) %>% data.frame.OD.rows
-  row.12 <- c("~End", rep("", 13)) %>% data.frame.OD.rows
+  row.5 <- c("~End", rep("", 13)) %>% data.frame.OD.rows
 
 
   # === Add rows to each plate ===
@@ -224,3 +224,4 @@ OD.export <- function(ODplates, #output from format.analyte.plates
                 quote = FALSE, col.names = FALSE, row.names = FALSE)
       }
 }
+
