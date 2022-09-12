@@ -109,16 +109,19 @@ create.id_replicate <- function(mfi,
 }
 
 
-#3. Susbstitute specimen/sample ID with MFI
+#3. Susbstitute specimen/sample ID with MFI on plate map
 loop.mfi.sub <- function(mfi, #with id_replicate column (run #1: create.id_replicate)
                          plate, #with wells containing IDs and replicate (run #2: add.plate.replicate.IDs)
                          metadata = c("experiment", "well", "sample", "dilution", "replicate", "sample_type", "specimen", "plate") #all columns except analytes
 )
 {
-  #identify analytes
+  # === identify analyte names ===
   analytes <- mfi %>% select(-c(any_of(metadata), id_replicate)) %>% colnames
-  #Initialize loop
+
+  # === subsitute speciment/sample ID with MFI
+  #Initialize loop variables
   out <- list()
+  well_row <- c("A", "B", "C", "D", "E", "F", "G", "H")
 
   #Loop
   for(i in 1:length(analytes)){
@@ -131,29 +134,40 @@ loop.mfi.sub <- function(mfi, #with id_replicate column (run #1: create.id_repli
       plate.column <- data.frame(id_replicate = plate[,j]) %>% left_join(mfi.analyte, by = "id_replicate")
       analyte.plate.df[,j+1] <- plate.column[,2]
     }
-    #clean-up df
+
+    #clean-up plate df
     analyte.plate.df <- analyte.plate.df %>% select(-rows)
     colnames(analyte.plate.df) <- colnames(plate)
 
-    #save analyte plate to list
+    #re-format plate in long-form  (col 1 = well, col 2 = mfi)
+    analyte.plate.longer <- analyte.plate.df %>% cbind(well_row) %>%
+      pivot_longer(cols = colnames(analyte.plate.df), names_to = "well_col", values_to = "mfi") %>%
+      mutate(well_col = gsub("V", "", well_col)) %>% mutate(well = paste0(well_row, well_col)) %>%
+      select(well, mfi)
+
+    #save long-form analyte plate to list
     out[[i]] <- analyte.plate.df
   }
   names(out) <- analytes
+
+
+
   return(out)
 }
 
 
-#4. Format as OD files
+#4. Format as OD files (version 1)
 format.analyte.plates <- function(analytes.list,
                                   plate.batch #plate number (aka batch number)
 )
 {
-  #constant row names
+  # === constant rows between plates ===
   row.1 <- c("##BLOCKS= 1", rep("", 13)) %>% data.frame.OD.rows
   row.3 <- c("", "Temperature(iC", 1:12) %>% data.frame.OD.rows
   row.12 <- c("~End", rep("", 13)) %>% data.frame.OD.rows
-  row.13 <- c("Original Filename: Data 10-01-21-152354.pda   Date Last Saved: 10/1/2021", rep("", 13)) %>% data.frame.OD.rows
-  row.14 <- c("Instrument type: Instrument serial number: ", rep("", 13)) %>% data.frame.OD.rows
+
+
+  # === Add rows to each plate ===
   #initialize loop
   out <- list()
   for(i in 1:length(analytes.list)){
@@ -181,9 +195,16 @@ format.analyte.plates <- function(analytes.list,
     out[[i]] <- analyte.df.out
 
   }
+
+
+
+
+
   names(out) <- names(analytes.list)
   return(out)
 }
+
+
 
 #5. Export files
 OD.export <- function(ODplates, #output from format.analyte.plates
