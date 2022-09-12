@@ -146,7 +146,7 @@ loop.mfi.sub <- function(mfi, #with id_replicate column (run #1: create.id_repli
       select(well, mfi)
 
     #save long-form analyte plate to list
-    out[[i]] <- analyte.plate.df
+    out[[i]] <- analyte.plate.longer
   }
   names(out) <- analytes
 
