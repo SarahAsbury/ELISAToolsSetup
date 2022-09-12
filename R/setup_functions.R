@@ -63,7 +63,8 @@ force.bind <- function(df1, df2) {
   bind_rows(df1, df2)
 }
 
-data.frame.OD.rows <- function(row){
+data.frame.OD.rows <- function(row) #transpose row and coerce to dataframe
+  {
   out <- row %>% data.frame %>% t() %>% data.frame
   return(out)
 }
@@ -163,9 +164,6 @@ format.analyte.plates <- function(analytes.list,
 )
 {
   # === constant rows between plates ===
-  row.1 <- c("##BLOCKS= 1", rep("", 13)) %>% data.frame.OD.rows
-  row.3 <- c("", "Temperature(iC", 1:12) %>% data.frame.OD.rows
-  row.5 <- c("~End", rep("", 13)) %>% data.frame.OD.rows
 
 
   # === Add rows to each plate ===
@@ -175,17 +173,27 @@ format.analyte.plates <- function(analytes.list,
     analyte <- names(analytes.list[i])
     print(paste("OD formatting", analyte))
 
+    #analyte dataframe
     analyte.df <- analytes.list[i] %>% data.frame
+    colnames(analyte.df) <- c("well", "mfi")
+
+    #total number of columns in OD format
+      # total cols = total number of wells + 2
+    total.OD.columns <- nrow(analyte.df) + 2
 
     #rows
-    row.2 <- c("Plate:", paste(plate.batch, analyte), "PlateFormat", "Endpoint", "Absorbance", "Raw", FALSE, 1, rep("", 6)) %>% data.frame.OD.rows
-    row.4 <- cbind("", "24", analyte.df[1,]) %>% data.frame
-    row.5_11 <- cbind(rep("", nrow(analyte.df[-1,])),
-                      rep("", nrow(analyte.df[-1,])),
-                      analyte.df[-1,]) %>% data.frame
+    row.1 <- c("##BLOCKS= 1", rep("", total.OD.columns - 1)) %>% data.frame.OD.rows
+    row.2 <- c("Plate:", paste(plate.batch, analyte), "PlateFormat", "Endpoint", "Absorbance", "Raw", FALSE, 1, rep("", total.OD.columns - 8)) %>% data.frame.OD.rows
+    row.3 <- c("", "Temperature(iC", analyte.df$well) %>% data.frame.OD.rows
+    row.4 <- c("", "24", analyte.df$mfi) %>% data.frame.OD.rows
+    row.5 <- c("~End", rep("", total.OD.columns - 1)) %>% data.frame.OD.rows
+
+
 
     #Loop rbind each row
-    row_names <- c("row.1", "row.2", "row.3", "row.4", "row.5_11", "row.12", "row.13", "row.14")
+    row_names <- c("row.1", "row.2", "row.3", "row.4", "row.5")
+
+
     #initialize loop
     analyte.df.out <-row.1
     for(k in 2:length(row_names)){
